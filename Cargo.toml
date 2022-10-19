@@ -1,0 +1,16 @@
+[package]
+name = "ficus-agent"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ficus-agent-lib = {path = "./lib"}
+ficus-agent-mock = {path = "./plugins/mock", optional = true}
+ficus-agent-aws = {path = "./plugins/aws", optional = true}
+futures = "0.3"
+tokio = { version = "1", features = ["full"] }
+
+[features]
+default = ["mock", "aws"]
+mock = ["dep:ficus-agent-mock"]
+aws = ["dep:ficus-agent-aws"]

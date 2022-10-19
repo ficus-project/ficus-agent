@@ -1,0 +1,8 @@
+[package]
+name = "ficus-agent-mock"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ficus-agent-lib = {path = "../../lib"}
+async-trait = "0.1.58"
