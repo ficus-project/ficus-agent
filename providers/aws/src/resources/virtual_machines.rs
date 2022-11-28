@@ -4,11 +4,11 @@ use aws_sdk_ec2::{Client as Ec2Client};
 use aws_sdk_cloudwatch::{Client as CloudWatchClient, types::DateTime};
 use ficus_agent_lib::models::{errors::FetchResourceError, resources::UsageMetric};
 use ficus_agent_lib::models::resources::VirtualMachine;
-use ficus_agent_lib::resources::virtual_machines::VirtualMachineDatasource;
+use ficus_agent_lib::resources::virtual_machines::VirtualMachineProvider;
 
 use crate::{utils::load_config, connectors::{ec2::{get_ec2, get_instance_types}, cloudwatch::get_ec2_cpu_usage}};
 
-pub struct AwsVirtualMachineDatasource {
+pub struct AwsVirtualMachineProvider {
   ec2_client: Ec2Client,
   cloudwatch_client: CloudWatchClient,
   instance_types: HashMap<String, Ec2InstanceType>,
@@ -20,24 +20,25 @@ struct Ec2InstanceType {
 }
 
 
-#[async_trait]
-impl VirtualMachineDatasource for AwsVirtualMachineDatasource {
-
-  async fn new() -> Self {
+impl AwsVirtualMachineProvider {
+  pub async fn new() -> Self {
     let config = load_config().await;
     let ec2_client = Ec2Client::new(&config);
     let cloudwatch_client = CloudWatchClient::new(&config);
 
     let instance_types = get_all_instance_types(&ec2_client).await.unwrap_or(HashMap::new());
 
-    AwsVirtualMachineDatasource {
+    AwsVirtualMachineProvider {
       instance_types,
       ec2_client,
       cloudwatch_client
     }
   }
+}
 
-  async fn list_virtual_machines(&self) -> Result<Vec<VirtualMachine>, FetchResourceError> {
+#[async_trait(?Send)]
+impl VirtualMachineProvider for AwsVirtualMachineProvider {
+  async fn list_virtual_machines(&self) -> Result<Box<Vec<VirtualMachine>>, FetchResourceError> {
     let mut instances: Vec<VirtualMachine> = vec![];
     let mut next_token: Option<String> = None;
 
@@ -61,14 +62,14 @@ impl VirtualMachineDatasource for AwsVirtualMachineDatasource {
       };
       if next_token.is_none() { break; }
     }
-    Ok(instances)
+    Ok(Box::new(instances))
   }
 
-  async fn measure_virtual_machines_usage(&self, identifiers: Vec<&String>) -> Result<HashMap<String, UsageMetric>, FetchResourceError> {
+  async fn measure_virtual_machines_usage(&self, identifiers: &Vec<String>, from_timestamp: u64, to_timestamp: u64) -> Result<Box<HashMap<String, UsageMetric>>, FetchResourceError> {
     let mut metrics: HashMap<String, UsageMetric> = HashMap::new();
 
     for identifier in identifiers {
-      match get_ec2_cpu_usage(&self.cloudwatch_client, &identifier, DateTime::from_secs(	1668862912), DateTime::from_secs(	1668898912), 3600).await {
+      match get_ec2_cpu_usage(&self.cloudwatch_client, &identifier, DateTime::from_secs(from_timestamp as i64), DateTime::from_secs(to_timestamp as i64), 3600).await {
         Ok(datapoints) => {
           for datapoint in datapoints {
             let timestamp = match datapoint.timestamp() { Some(datapoint_timestamp) => { Some(datapoint_timestamp.secs()) }, None => None };
@@ -82,7 +83,7 @@ impl VirtualMachineDatasource for AwsVirtualMachineDatasource {
         }
       };
     }
-    Ok(metrics)
+    Ok(Box::new(metrics))
   }
 }
 

@@ -1,0 +1,4 @@
+url = "http://127.0.0.1:8086"
+organization = "ficus-project"
+token = "ficus-token"
+bucket = "ficus-agent"

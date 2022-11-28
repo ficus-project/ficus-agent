@@ -15,7 +15,6 @@ pub async fn get_ec2_cpu_usage(client: &Client, instance_id: &String, start_time
       Dimension::builder().set_name(Some(String::from("InstanceId"))).set_value(Some(instance_id.clone())).build()
     ]))
     .send().await?;
-  println!("{:?}", response);
 
   Ok(response.datapoints().unwrap_or_default().to_vec())
 }

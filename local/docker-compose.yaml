@@ -1,0 +1,20 @@
+services:
+  influxdb:
+    image: influxdb:2.5.1-alpine
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2/config.yml
+    expose:
+      - 8086
+    ports:
+      - 8086:8086
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=ficus
+      - DOCKER_INFLUXDB_INIT_PASSWORD=ficuspass
+      - DOCKER_INFLUXDB_INIT_ORG=ficus-project
+      - DOCKER_INFLUXDB_INIT_BUCKET=ficus-agent
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=ficus-token
+volumes:
+  influxdb_data:
+  influxdb_config:
