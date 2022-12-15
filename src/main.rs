@@ -1,8 +1,7 @@
+use analyzers::analyzer::analyze_resources;
 use futures::executor::block_on;
 
-use crate::analyzer::analyze_resources;
-
-mod analyzer;
+mod analyzers;
 mod connectors;
 
 

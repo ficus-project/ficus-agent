@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use hocon::HoconLoader;
-use influxdb2::{Client, models::DataPoint, RequestError};
+use influxdb2::{Client, models::{DataPoint, FieldValue}, RequestError};
 use serde::Deserialize;
 
 
@@ -30,7 +30,7 @@ impl InfluxdbWriter {
     }
   }
 
-  pub async fn send_metric(&self, metric_name: String, timestamp_sec: i64, tags: &HashMap<String, String>, fields: &HashMap<String, f64>) -> Result<(), RequestError> {
+  pub async fn send_metric<T: Into<FieldValue> + Copy>(&self, metric_name: String, timestamp_sec: i64, tags: &HashMap<String, String>, fields: &HashMap<String, T>) -> Result<(), RequestError> {
     let mut datapoint_builder = DataPoint::builder(metric_name).timestamp(timestamp_sec * 1_000_000_000);
     for (key, value) in &*tags {
       datapoint_builder = datapoint_builder.tag(key, value);

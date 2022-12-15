@@ -7,13 +7,17 @@ impl MockData {
     return vec![
       VirtualMachine {
         identifier: Some(String::from("corvo")),
-        cpu_core: Some(4),
+        cpu_cores: Some(4),
+        cpu_threads: Some(8),
         memory_in_mb: Some(4048),
+        is_running: Some(true),
       },
       VirtualMachine {
         identifier: Some(String::from("orero")),
-        cpu_core: Some(8),
+        cpu_cores: Some(8),
+        cpu_threads: Some(16),
         memory_in_mb: Some(2048),
+        is_running: Some(false),
       }
     ]
   }

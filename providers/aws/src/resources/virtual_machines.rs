@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use async_trait::async_trait;
+use aws_sdk_ec2::model::InstanceStateName;
 use aws_sdk_ec2::{Client as Ec2Client};
 use aws_sdk_cloudwatch::{Client as CloudWatchClient, types::DateTime};
 use ficus_agent_lib::models::{errors::FetchResourceError, resources::UsageMetric};
@@ -47,11 +48,18 @@ impl VirtualMachineProvider for AwsVirtualMachineProvider {
         Ok((ec2_instances, token)) => {
           for ec2_instance in ec2_instances {
             let identifier = match ec2_instance.instance_id() { Some(ec2_identifier) => { Some(String::from(ec2_identifier)) }, None => None };
-            let cpu_core = match ec2_instance.cpu_options() { Some(cpu_options) => { cpu_options.core_count() }, None => None };
+            let (cpu_cores, cpu_threads) = match ec2_instance.cpu_options() {
+              Some(cpu_options) => { (cpu_options.core_count(), cpu_options.threads_per_core()) },
+              None => (None, None)
+            };
+            let is_running = match ec2_instance.state() {
+              Some(state) => { Some(Some(&InstanceStateName::Running) == state.name()) },
+              None => None
+            };
             let ec2_instance_type = match ec2_instance.instance_type() { Some(instance_type) => { self.instance_types.get(instance_type.as_str()) }, None => None };
             let memory_in_mb = match ec2_instance_type { Some(instance_type) => { Some(instance_type.memory) }, None => None };
-            
-            instances.push(VirtualMachine { identifier, cpu_core, memory_in_mb })
+
+            instances.push(VirtualMachine { identifier, cpu_cores, cpu_threads, memory_in_mb, is_running })
           }
           next_token = token;
         },
