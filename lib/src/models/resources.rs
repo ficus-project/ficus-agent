@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct VirtualMachine {
@@ -6,6 +7,7 @@ pub struct VirtualMachine {
   pub cpu_threads: Option<i32>,
   pub memory_in_mb: Option<i64>,
   pub is_running: Option<bool>,
+  pub tags: HashMap<String, String>,
 }
 
 #[derive(Debug)]

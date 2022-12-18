@@ -58,8 +58,17 @@ impl VirtualMachineProvider for AwsVirtualMachineProvider {
             };
             let ec2_instance_type = match ec2_instance.instance_type() { Some(instance_type) => { self.instance_types.get(instance_type.as_str()) }, None => None };
             let memory_in_mb = match ec2_instance_type { Some(instance_type) => { Some(instance_type.memory) }, None => None };
+            let tags = match ec2_instance.tags() {
+              Some(ec2_tags) => {
+                ec2_tags.iter()
+                  .map(|tag| (tag.key(), tag.value()))
+                  .filter(|(key, value)| key.is_some() && value.is_some())
+                  .map(|(key, value)| (key.unwrap().to_string(), value.unwrap().to_string()))
+                  .collect::<HashMap<String, String>>() },
+              None => HashMap::new()
+            };
 
-            instances.push(VirtualMachine { identifier, cpu_cores, cpu_threads, memory_in_mb, is_running })
+            instances.push(VirtualMachine { identifier, cpu_cores, cpu_threads, memory_in_mb, is_running, tags })
           }
           next_token = token;
         },

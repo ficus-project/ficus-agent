@@ -13,8 +13,8 @@ pub async fn analyze_virtual_machines(from_timestamp: u64, to_timestamp: u64) {
   let (vms, vms_usage) = fetch_vm_and_consumption(from_timestamp, to_timestamp).await;
 
   // Storing data
-  store_vm_existence_data(vms).await;
-  store_vm_usage_data(vms_usage).await;
+  store_vms_existence_data(vms).await;
+  store_vms_usage_data(vms_usage).await;
 }
 
 async fn fetch_vm_and_consumption(from_timestamp: u64, to_timestamp: u64) -> (Vec<VirtualMachine>, HashMap<String, UsageMetric>) {
@@ -47,31 +47,40 @@ async fn get_vm_providers() -> Vec<Box<dyn VirtualMachineProvider>> {
   ]
 }
 
-async fn store_vm_existence_data(vms: Vec<VirtualMachine>) {
-  let mut metric_sent_count: i32 = 0;
+async fn store_vms_existence_data(vms: Vec<VirtualMachine>) {
   let now_timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
   let influxdb_writer = InfluxdbWriter::new();
+  println!("Sending {} virtual machines data to influx", vms.len());
   for vm in vms {
-    if let Some(vm_identifier) = vm.identifier {
-      let mut tags = HashMap::new();
-      tags.insert(String::from("host"), vm_identifier);
+    let mut bool_fields: HashMap<String, bool> = HashMap::new();
+    if let Some(is_running) = vm.is_running { bool_fields.insert(String::from("is_running"), is_running); }
 
-      let mut int_fields: HashMap<String, i64> = HashMap::new();
-      if let Some(cpu_cores) = vm.cpu_cores { int_fields.insert(String::from("cpu_cores"), cpu_cores as i64); }
-      if let Some(cpu_threads) = vm.cpu_threads { int_fields.insert(String::from("cpu_threads"), cpu_threads as i64); }
-      if let Some(memory_in_mb) = vm.memory_in_mb { int_fields.insert(String::from("memory_in_mb"), memory_in_mb); }
-      let mut bool_fields: HashMap<String, bool> = HashMap::new();
-      if let Some(is_running) = vm.is_running { bool_fields.insert(String::from("is_running"), is_running); }
-      
-      influxdb_writer.send_metric(String::from("vm"), now_timestamp, &tags, &int_fields).await.unwrap();
-      influxdb_writer.send_metric(String::from("vm"), now_timestamp, &tags, &bool_fields).await.unwrap();
-      metric_sent_count = metric_sent_count + 1;
-    }
+    let (tags, fields) = build_tags_and_fields_for_vm(vm).await;
+    
+    influxdb_writer.send_metric(String::from("vm"), now_timestamp, &tags, &fields).await.unwrap();
+    influxdb_writer.send_metric(String::from("vm"), now_timestamp, &tags, &bool_fields).await.unwrap();
   }
-  println!("Sent {} virtual machines to influx", metric_sent_count);
 }
 
-async fn store_vm_usage_data(vms_usage: HashMap<String, UsageMetric>) {
+async fn build_tags_and_fields_for_vm(vm: VirtualMachine) -> (HashMap<String, String>, HashMap<String, i64>) {
+  let mut tags = HashMap::new();
+  if let Some(vm_identifier) = vm.identifier { tags.insert(String::from("id"), vm_identifier); }
+  for (tag_key, tag_value) in vm.tags {
+    tags.insert("tag:".to_owned() + &tag_key, tag_value.clone());
+    if tag_key == "Name" { tags.insert(String::from("name"), tag_value); }
+  }
+
+  let mut int_fields: HashMap<String, i64> = HashMap::new();
+  if let Some(cpu_cores) = vm.cpu_cores { int_fields.insert(String::from("cpu_cores"), cpu_cores as i64); }
+  if let Some(cpu_threads) = vm.cpu_threads { int_fields.insert(String::from("cpu_threads"), cpu_threads as i64); }
+  if let Some(memory_in_mb) = vm.memory_in_mb { int_fields.insert(String::from("memory_in_mb"), memory_in_mb); }
+  let mut bool_fields: HashMap<String, bool> = HashMap::new();
+  if let Some(is_running) = vm.is_running { bool_fields.insert(String::from("is_running"), is_running); }
+  
+  (tags, int_fields)
+}
+
+async fn store_vms_usage_data(vms_usage: HashMap<String, UsageMetric>) {
   let mut metric_sent_count: i32 = 0;
   let vms_count = vms_usage.len();
   let influxdb_writer = InfluxdbWriter::new();
@@ -87,5 +96,5 @@ async fn store_vm_usage_data(vms_usage: HashMap<String, UsageMetric>) {
       metric_sent_count = metric_sent_count + 1;
     }
   }
-  println!("Sent {} usage metrics to influx, for {} virtual machines", metric_sent_count, vms_count);
+  println!("Sent {} usage metrics to influx, related to the consumption of {} virtual machines", metric_sent_count, vms_count);
 }

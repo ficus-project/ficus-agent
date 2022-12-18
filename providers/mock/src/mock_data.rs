@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ficus_agent_lib::models::resources::VirtualMachine;
 
 pub struct MockData {}
@@ -11,6 +13,7 @@ impl MockData {
         cpu_threads: Some(8),
         memory_in_mb: Some(4048),
         is_running: Some(true),
+        tags: HashMap::new(),
       },
       VirtualMachine {
         identifier: Some(String::from("orero")),
@@ -18,6 +21,7 @@ impl MockData {
         cpu_threads: Some(16),
         memory_in_mb: Some(2048),
         is_running: Some(false),
+        tags: HashMap::new(),
       }
     ]
   }
