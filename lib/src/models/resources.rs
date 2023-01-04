@@ -8,6 +8,7 @@ pub struct VirtualMachine {
   pub memory_in_mb: Option<i64>,
   pub is_running: Option<bool>,
   pub tags: HashMap<String, String>,
+  pub provider: String,
 }
 
 #[derive(Debug)]

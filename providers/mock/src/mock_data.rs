@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use ficus_agent_lib::models::resources::VirtualMachine;
 
+use crate::PROVIDER_IDENTIFIER;
+
 pub struct MockData {}
 
 impl MockData {
@@ -14,6 +16,7 @@ impl MockData {
         memory_in_mb: Some(4048),
         is_running: Some(true),
         tags: HashMap::new(),
+        provider: String::from(PROVIDER_IDENTIFIER),
       },
       VirtualMachine {
         identifier: Some(String::from("orero")),
@@ -22,6 +25,7 @@ impl MockData {
         memory_in_mb: Some(2048),
         is_running: Some(false),
         tags: HashMap::new(),
+        provider: String::from(PROVIDER_IDENTIFIER),
       }
     ]
   }

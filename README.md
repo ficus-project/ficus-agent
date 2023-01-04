@@ -10,7 +10,7 @@ Several can be active at the same time.
 
 ### AWS
 
-To use the aws plugin, you need to have a AWS IAM user existing and configured into your `~/.aws.credentials` file, like this example:  
+To use the aws plugin, you need to have a AWS IAM user existing and configured into your `~/.aws/credentials` file, like this example:  
 ```toml
 [default]
 aws_access_key_id=YOUR-ACCESS-KEY

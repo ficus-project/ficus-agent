@@ -50,7 +50,7 @@ async fn get_vm_providers() -> Vec<Box<dyn VirtualMachineProvider>> {
 async fn store_vms_existence_data(vms: Vec<VirtualMachine>) {
   let now_timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
   let influxdb_writer = InfluxdbWriter::new();
-  println!("Sending {} virtual machines data to influx", vms.len());
+  println!("Found {} existing virtual machines", vms.len());
   for vm in vms {
     let mut bool_fields: HashMap<String, bool> = HashMap::new();
     if let Some(is_running) = vm.is_running { bool_fields.insert(String::from("is_running"), is_running); }
@@ -65,6 +65,7 @@ async fn store_vms_existence_data(vms: Vec<VirtualMachine>) {
 async fn build_tags_and_fields_for_vm(vm: VirtualMachine) -> (HashMap<String, String>, HashMap<String, i64>) {
   let mut tags = HashMap::new();
   if let Some(vm_identifier) = vm.identifier { tags.insert(String::from("id"), vm_identifier); }
+  tags.insert(String::from("provider"), String::from(vm.provider));
   for (tag_key, tag_value) in vm.tags {
     tags.insert("tag:".to_owned() + &tag_key, tag_value.clone());
     if tag_key == "Name" { tags.insert(String::from("name"), tag_value); }

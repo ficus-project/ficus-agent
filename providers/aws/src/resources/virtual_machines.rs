@@ -7,6 +7,7 @@ use ficus_agent_lib::models::{errors::FetchResourceError, resources::UsageMetric
 use ficus_agent_lib::models::resources::VirtualMachine;
 use ficus_agent_lib::resources::virtual_machines::VirtualMachineProvider;
 
+use crate::PROVIDER_IDENTIFIER;
 use crate::{utils::load_config, connectors::{ec2::{get_ec2, get_instance_types}, cloudwatch::get_ec2_cpu_usage}};
 
 pub struct AwsVirtualMachineProvider {
@@ -68,7 +69,7 @@ impl VirtualMachineProvider for AwsVirtualMachineProvider {
               None => HashMap::new()
             };
 
-            instances.push(VirtualMachine { identifier, cpu_cores, cpu_threads, memory_in_mb, is_running, tags })
+            instances.push(VirtualMachine { identifier, cpu_cores, cpu_threads, memory_in_mb, is_running, tags, provider: String::from(PROVIDER_IDENTIFIER) })
           }
           next_token = token;
         },
