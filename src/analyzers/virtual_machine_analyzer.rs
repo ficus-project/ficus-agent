@@ -8,6 +8,15 @@ use crate::connectors::influxdb::InfluxdbWriter;
 
 
 
+async fn get_vm_providers() -> Vec<Box<dyn VirtualMachineProvider>> {
+  vec![
+    #[cfg(feature = "aws")]
+    Box::new(AwsVirtualMachineProvider::new().await),
+    #[cfg(feature = "mock")]
+    Box::new(MockVirtualMachineProvider::new().await),
+  ]
+}
+
 pub async fn analyze_virtual_machines(from_timestamp: u64, to_timestamp: u64) {
   // Fetching resources & consumption
   let (vms, vms_usage) = fetch_vm_and_consumption(from_timestamp, to_timestamp).await;
@@ -17,10 +26,10 @@ pub async fn analyze_virtual_machines(from_timestamp: u64, to_timestamp: u64) {
   store_vms_usage_data(vms_usage).await;
 }
 
-async fn fetch_vm_and_consumption(from_timestamp: u64, to_timestamp: u64) -> (Vec<VirtualMachine>, HashMap<String, UsageMetric>) {
+async fn fetch_vm_and_consumption(from_timestamp: u64, to_timestamp: u64) -> (Vec<VirtualMachine>, HashMap<String, HashMap<String, UsageMetric>>) {
   let providers = get_vm_providers().await;
   let mut virtual_machines: Vec<VirtualMachine> = vec![];
-  let mut vms_usage: HashMap<String, UsageMetric> = HashMap::new();
+  let mut vms_usage = HashMap::new();
 
   for provider in providers {
     let vms_result = provider.list_virtual_machines().await;
@@ -36,15 +45,6 @@ async fn fetch_vm_and_consumption(from_timestamp: u64, to_timestamp: u64) -> (Ve
   }
 
   (virtual_machines, vms_usage)
-}
-
-async fn get_vm_providers() -> Vec<Box<dyn VirtualMachineProvider>> {
-  vec![
-    #[cfg(feature = "aws")]
-    Box::new(AwsVirtualMachineProvider::new().await),
-    #[cfg(feature = "mock")]
-    Box::new(MockVirtualMachineProvider::new().await),
-  ]
 }
 
 async fn store_vms_existence_data(vms: Vec<VirtualMachine>) {
@@ -81,20 +81,22 @@ async fn build_tags_and_fields_for_vm(vm: VirtualMachine) -> (HashMap<String, St
   (tags, int_fields)
 }
 
-async fn store_vms_usage_data(vms_usage: HashMap<String, UsageMetric>) {
+async fn store_vms_usage_data(vms_usage: HashMap<String, HashMap<String, UsageMetric>>) {
   let mut metric_sent_count: i32 = 0;
   let vms_count = vms_usage.len();
   let influxdb_writer = InfluxdbWriter::new();
-  for (vm, usage) in vms_usage {
-    let mut tags = HashMap::new();
-    tags.insert(String::from("host"), vm);
+  for (vm_name, vm_metrics) in vms_usage {
+    for (metric_name, usage) in vm_metrics {
+      let mut tags = HashMap::new();
+      tags.insert(String::from("id"), vm_name.clone());
 
-    let mut fields = HashMap::new();
-    if let Some(average) = usage.average { fields.insert(String::from("average"), average); }
-    if let Some(sum) = usage.sum { fields.insert(String::from("sum"), sum); }
-    if let Some(timestamp) = usage.timestamp {
-      influxdb_writer.send_metric(String::from("vm_cpu"), timestamp, &tags, &fields).await.unwrap();
-      metric_sent_count = metric_sent_count + 1;
+      let mut fields = HashMap::new();
+      if let Some(average) = usage.average { fields.insert(String::from("average"), average); }
+      if let Some(sum) = usage.sum { fields.insert(String::from("sum"), sum); }
+      if let Some(timestamp) = usage.timestamp {
+        influxdb_writer.send_metric(metric_name.clone(), timestamp, &tags, &fields).await.unwrap();
+        metric_sent_count = metric_sent_count + 1;
+      }
     }
   }
   println!("Sent {} usage metrics to influx, related to the consumption of {} virtual machines", metric_sent_count, vms_count);

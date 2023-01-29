@@ -11,7 +11,7 @@ pub trait VirtualMachineProvider {
     Err(FetchResourceError { message: String::from("Not implemented") })
   }
 
-  async fn measure_virtual_machines_usage(&self, _identifiers: &Vec<String>, _from_timestamp: u64, _to_timestamp: u64) -> Result<Box<HashMap<String, UsageMetric>>, FetchResourceError> {
+  async fn measure_virtual_machines_usage(&self, _identifiers: &Vec<String>, _from_timestamp: u64, _to_timestamp: u64) -> Result<Box<HashMap<String, HashMap<String, UsageMetric>>>, FetchResourceError> {
     Err(FetchResourceError { message: String::from("Not implemented") })
   }
 }

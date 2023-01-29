@@ -17,3 +17,12 @@ pub struct UsageMetric {
   pub average: Option<f64>,
   pub sum: Option<f64>,
 }
+
+#[derive(Debug)]
+pub struct CloudFunction {
+  pub name: Option<String>,
+  pub description: Option<String>,
+  pub memory: Option<i32>,
+  pub code_size: Option<i64>,
+  pub provider: String,
+}

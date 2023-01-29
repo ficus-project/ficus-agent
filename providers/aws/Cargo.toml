@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 ficus-agent-lib = {path = "../../lib"}
 async-trait = "0.1.58"
-aws-config = "0.51.0"
-aws-sdk-ec2 = "0.21.0"
-aws-sdk-cloudwatch = "0.21.0"
+aws-config = "0.53.0"
+aws-sdk-ec2 = "0.23.0"
+aws-sdk-lambda = "0.23.0"
+aws-sdk-cloudwatch = "0.23.0"

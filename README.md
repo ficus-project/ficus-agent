@@ -18,7 +18,9 @@ aws_secret_access_key=YOUR-SECRET-KEY
 region=YOUR-REGION
 ```
 
-> *Ficus doesn't need any write permission on AWS, so we recommend giving only readonly access on the resources you're interested in (like EC2, Cloudwatch)*  
+> *Ficus doesn't need any write permission on AWS, so we recommend giving only readonly access on the resources used by Ficus (EC2, Lambda, Cloudwatch)*  
+
+- For lambda memory usage, you need to enable Cloudwatch Lambda Insights
 
 ### Mock
 

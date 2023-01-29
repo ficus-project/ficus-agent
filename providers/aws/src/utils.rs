@@ -1,4 +1,4 @@
-use aws_config::{SdkConfig, meta::region::RegionProviderChain};
+use aws_config::{meta::region::RegionProviderChain, SdkConfig};
 
 
 pub async fn load_config() -> SdkConfig {
